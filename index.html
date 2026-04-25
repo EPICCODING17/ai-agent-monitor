@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏢 EPICCODING HQ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1a0a; --floor:#2a2015; --wall:#1e1a10;
+  --desk-top:#c8872a; --desk-mid:#9b6218; --desk-drk:#7a4e10;
+  --desk-hi:#e8a830; --card:#0c0c1e; --border:#1e1e3a;
+  --nblue:#00b4ff; --ngold:#ffd700; --ngreen:#00ff88;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{
+  background:var(--floor);
+  font-family:'Noto Sans Thai',sans-serif;
+  color:#c0c0cc;
+}
+.pf{font-family:'Press Start 2P',monospace}
+
+/* ── Floor pattern ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(255,220,150,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,220,150,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;z-index:0;
+}
+
+/* ── Animations ── */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes blink{0%,100%{opacity:1}49%{opacity:1}50%{opacity:.3}99%{opacity:.3}}
+@keyframes glow{0%,100%{box-shadow:0 0 6px var(--ac),0 0 14px var(--ac)}50%{box-shadow:0 0 18px var(--ac),0 0 36px var(--ac)}}
+@keyframes popin{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.07)}100%{transform:scale(1);opacity:1}}
+@keyframes slidein{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@keyframes scan{0%{top:0;opacity:.4}100%{top:100%;opacity:0}}
+@keyframes typing{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes screenOn{0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes walkin{from{transform:scale(0) rotate(-15deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes bubble{0%{transform:scale(0) translateX(-50%)}60%{transform:scale(1.1) translateX(-50%)}100%{transform:scale(1) translateX(-50%)}}
+@keyframes neon{0%,100%{text-shadow:0 0 8px currentColor,0 0 20px currentColor}50%{text-shadow:0 0 3px currentColor}}
+
+.idle-anim .char-body{animation:float 2.8s ease-in-out infinite}
+.work-anim .char-body{animation:typing .4s ease-in-out infinite}
+.neon-t{animation:neon 3s ease-in-out infinite}
+.walk-in{animation:walkin .5s ease-out}
+
+/* ── Desk card ── */
+.desk-card{
+  background:linear-gradient(180deg,#1e1e10 0%,#141408 100%);
+  border:1px solid #2a2a14;
+  border-radius:10px;padding:10px 8px;
+  cursor:pointer;transition:all .3s;
+  position:relative;overflow:visible;
+  --ac:#00b4ff;
+}
+.desk-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--ac),transparent);
+  border-radius:10px 10px 0 0;opacity:0;transition:opacity .3s;
+}
+.desk-card:hover::before,.desk-card.busy::before{opacity:1}
+.desk-card:hover{
+  transform:translateY(-4px);border-color:var(--ac);
+  box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 16px var(--ac);
+}
+.desk-card.busy{border-color:#ffcc00;animation:glow 1.4s infinite}
+.desk-card.done-flash{border-color:#00ff88!important;box-shadow:0 0 28px #00ff8866!important;transition:none}
+
+/* ── Pixel desk ── */
+.pixel-desk-wrap{
+  position:relative;display:flex;flex-direction:column;
+  align-items:center;margin:2px 0 4px;
+}
+.speech-bubble{
+  position:absolute;top:-32px;left:50%;
+  transform:translateX(-50%) scale(0);
+  background:#fffef0;color:#222;
+  border-radius:8px;padding:4px 8px;
+  font-size:.6rem;white-space:nowrap;
+  max-width:140px;overflow:hidden;text-overflow:ellipsis;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+  z-index:10;pointer-events:none;
+  transform-origin:bottom center;
+  border:1px solid #ddd;
+}
+.speech-bubble::after{
+  content:'';position:absolute;bottom:-6px;left:50%;
+  transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#fffef0;
+  border-bottom:none;
+}
+.desk-card.busy .speech-bubble{animation:bubble .3s ease-out forwards}
+
+/* ── Screen glow ── */
+.screen-glow{animation:screenOn 2s ease-in-out infinite}
+
+/* ── Status dot ── */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot.idle{background:#4ade80}
+.dot.busy{background:#ffcc00;animation:blink .8s infinite}
+
+/* ── Task items ── */
+.task-item{
+  animation:slidein .3s ease-out;
+  border-left:3px solid var(--nblue);
+  padding:6px 9px;margin-bottom:4px;
+  background:rgba(0,180,255,.04);
+  border-radius:0 6px 6px 0;font-size:.7rem;
+}
+.task-item.busy{border-color:#ffcc00;background:rgba(255,204,0,.04)}
+.task-item.completed{border-color:#4ade80;background:rgba(74,222,128,.04)}
+
+/* ── XP bar ── */
+.xpbar{height:3px;border-radius:2px;background:#1a1a2a;overflow:hidden}
+.xpfill{height:100%;border-radius:2px;transition:width .6s ease}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:2px}
+
+/* ── Modal ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  backdrop-filter:blur(6px);z-index:300;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-box{
+  background:#0c0c1e;border:1px solid var(--mcolor,#00b4ff);
+  border-radius:16px;padding:22px;max-width:500px;width:92%;
+  max-height:85vh;overflow-y:auto;animation:popin .3s ease-out;
+}
+.cmd{
+  display:inline-block;background:rgba(0,180,255,.08);
+  border:1px solid rgba(0,180,255,.25);color:#00b4ff;
+  border-radius:5px;padding:2px 7px;font-size:.64rem;
+  font-family:monospace;margin:2px;cursor:pointer;transition:all .2s;
+}
+.cmd:hover{background:rgba(0,180,255,.2);border-color:#00b4ff}
+
+/* ── Inputs ── */
+.inp{
+  background:rgba(0,180,255,.04);border:1px solid #1e1e3a;
+  color:#c0c0d8;border-radius:8px;padding:8px 12px;
+  font-family:'Noto Sans Thai',sans-serif;font-size:.82rem;
+  width:100%;transition:all .3s;
+}
+.inp:focus{outline:none;border-color:var(--nblue);box-shadow:0 0 10px rgba(0,180,255,.2)}
+.btn-send{
+  background:linear-gradient(135deg,#003d99,#0070ee);
+  border:none;color:#fff;border-radius:8px;
+  padding:10px 0;cursor:pointer;
+  font-family:'Noto Sans Thai',sans-serif;font-size:.82rem;
+  width:100%;transition:all .2s;
+}
+.btn-send:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,112,238,.5)}
+
+/* ── Dept filter ── */
+.filt{
+  padding:3px 11px;border-radius:9999px;font-size:.68rem;
+  cursor:pointer;border:1px solid transparent;transition:all .2s;white-space:nowrap;
+}
+.filt:hover{border-color:rgba(0,180,255,.4)}
+.filt.on{border-color:var(--nblue);background:rgba(0,180,255,.1);color:var(--nblue)}
+
+/* ── Firebase badge ── */
+.fb{font-size:.6rem;padding:2px 8px;border-radius:9999px}
+.fb.live{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid #4ade80}
+.fb.demo{background:rgba(255,204,0,.12);color:#ffcc00;border:1px solid #ffcc00}
+
+/* ── Jeep card ── */
+.jeep-card{
+  background:linear-gradient(135deg,#1a0828,#0c0c18);
+  border:2px solid #ffd700;
+  box-shadow:0 0 30px rgba(255,215,0,.2);
+}
+
+/* ── Rank ── */
+.r0{color:#6b7280}.r1{color:#4ade80}.r2{color:#fb923c}.r3{color:#60a5fa}
+.r4{color:#ffd700;text-shadow:0 0 8px #ffd700}
+
+/* ── Scanline ── */
+#scanline{position:fixed;left:0;right:0;height:2px;background:rgba(200,180,100,.08);pointer-events:none;z-index:999;top:0}
+
+/* ════ LAYOUT ════ */
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{flex-shrink:0}
+.main-row{flex:1;display:flex;min-height:0;overflow:hidden}
+#left-panel,#right-panel{
+  width:240px;min-width:240px;overflow-y:auto;
+  background:rgba(10,10,5,.85);flex-shrink:0;
+}
+#left-panel{border-right:1px solid #2a2a14}
+#right-panel{border-left:1px solid #2a2a14}
+#office{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px;min-height:0}
+
+/* ════ MOBILE ════ */
+#mob-nav{display:none}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200}
+.drawer{
+  position:fixed;top:0;bottom:0;width:80%;max-width:300px;
+  background:#0a0a05;overflow-y:auto;z-index:201;
+  transition:transform .3s ease;
+  padding:16px;
+}
+.drawer.left{left:0;transform:translateX(-100%);border-right:1px solid #2a2a14}
+.drawer.right{right:0;transform:translateX(100%);border-left:1px solid #2a2a14}
+.drawer.open{transform:translateX(0)}
+
+@media(max-width:900px){
+  #left-panel,#right-panel{display:none}
+  #hdr-desktop{display:none!important}
+  #hdr-mobile{display:flex!important}
+  body{height:auto;min-height:100vh;overflow:auto;display:block}
+  .main-row{overflow:visible;display:block}
+  #office{
+    overflow:visible;
+    padding-bottom:80px;
+    min-height:auto;
+  }
+
+  #mob-nav{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;
+    background:rgba(10,10,6,.97);
+    border-top:1px solid #3a3a1a;
+    backdrop-filter:blur(10px);
+    z-index:100;
+    height:62px;
+    padding:0 8px;
+    gap:4px;
+  }
+  .mob-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:4px;cursor:pointer;
+    font-size:.62rem;color:#555544;
+    transition:color .2s;border:none;background:none;
+    font-family:'Noto Sans Thai',sans-serif;
+    padding:4px 2px;border-radius:10px;
+    min-width:0;
+  }
+  .mob-btn.active,.mob-btn:hover{color:var(--nblue);background:rgba(0,180,255,.06)}
+  .mob-btn .mob-icon{font-size:1.3rem;line-height:1}
+  .mob-btn .mob-label{font-size:.58rem;white-space:nowrap}
+  .desk-grid-cols{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(max-width:480px){
+  .desk-grid-cols{grid-template-columns:repeat(2,1fr)!important}
+  .desk-card{padding:8px 6px}
+  #mob-nav{height:58px}
+  .mob-btn .mob-label{font-size:.52rem}
+}
+</style>
+</head>
+<body>
+<div id="scanline"></div>
+
+<!-- ════ HEADER ════ -->
+<header id="main-header" style="background:rgba(8,8,4,.97);border-bottom:1px solid #2a2a14;backdrop-filter:blur(10px);z-index:50;flex-shrink:0">
+
+  <!-- Desktop header -->
+  <div id="hdr-desktop" style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div>
+        <div class="pf neon-t" style="font-size:.52rem;color:#00b4ff">EPICCODING HQ</div>
+        <div style="font-size:.55rem;color:#333322">AI Agent Monitor v2.0</div>
+      </div>
+      <span id="fb-badge" class="fb demo">⚡ Demo</span>
+      <span id="server-badge" style="font-size:.58rem;color:#ffcc00">🔴 Demo Mode</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="text-align:center">
+        <div class="pf" id="stat-idle" style="font-size:.55rem;color:#4ade80">15</div>
+        <div style="font-size:.52rem;color:#333322">ว่าง</div>
+      </div>
+      <div style="text-align:center">
+        <div class="pf" id="stat-busy" style="font-size:.55rem;color:#ffcc00">0</div>
+        <div style="font-size:.52rem;color:#333322">ทำงาน</div>
+      </div>
+      <div style="text-align:center">
+        <div class="pf" style="font-size:.55rem;color:#00b4ff">746</div>
+        <div style="font-size:.52rem;color:#333322">Skills</div>
+      </div>
+      <div style="text-align:center">
+        <div class="pf" id="clock" style="font-size:.55rem;color:#c0c0c8">--:--</div>
+        <div style="font-size:.52rem;color:#333322">เวลา</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:1.1rem">👨‍💼</span>
+      <div>
+        <div style="font-size:.72rem;color:#ffd700;font-weight:700">CEO Pong</div>
+        <div style="font-size:.54rem;color:#554433">Commander in Chief</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile header -->
+  <div id="hdr-mobile" style="display:none;align-items:center;justify-content:space-between;padding:0 12px;height:52px">
+    <!-- Left: hamburger + title -->
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="openDrawer('left')"
+        style="background:rgba(0,180,255,.08);border:1px solid #2a2a3a;color:#00b4ff;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
+        ☰
+      </button>
+      <div>
+        <div class="pf" style="font-size:.45rem;color:#00b4ff;line-height:1.4">EPICCODING HQ</div>
+        <span id="fb-badge-mob" class="fb demo" style="font-size:.5rem;padding:1px 6px">⚡ Demo</span>
+      </div>
+    </div>
+    <!-- Center: stats pills -->
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:6px;padding:3px 8px;text-align:center">
+        <div class="pf" id="stat-idle-m" style="font-size:.5rem;color:#4ade80">15</div>
+        <div style="font-size:.45rem;color:#334422">ว่าง</div>
+      </div>
+      <div style="background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.3);border-radius:6px;padding:3px 8px;text-align:center">
+        <div class="pf" id="stat-busy-m" style="font-size:.5rem;color:#ffcc00">0</div>
+        <div style="font-size:.45rem;color:#443322">ทำงาน</div>
+      </div>
+    </div>
+    <!-- Right: CEO + log btn -->
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:4px 8px">
+        <span style="font-size:1rem">👨‍💼</span>
+        <span style="font-size:.65rem;color:#ffd700;font-weight:700">Pong</span>
+      </div>
+      <button onclick="openDrawer('right')"
+        style="background:rgba(0,180,255,.08);border:1px solid #2a2a3a;color:#00b4ff;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
+        📋
+      </button>
+    </div>
+  </div>
+
+</header>
+
+<!-- ════ MAIN ROW ════ -->
+<div class="main-row">
+
+  <!-- ── LEFT PANEL ── -->
+  <div id="left-panel" style="padding:12px">
+    <div id="left-content"></div>
+  </div>
+
+  <!-- ── OFFICE FLOOR ── -->
+  <div id="office">
+    <!-- Dept filters -->
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="filters">
+      <div class="filt on" data-d="all" onclick="filter('all')">🏢 ทั้งหมด</div>
+    </div>
+    <!-- Floor label -->
+    <div style="text-align:center;margin-bottom:10px">
+      <span class="pf" style="font-size:.44rem;color:#2a2a18;letter-spacing:4px">─── OFFICE FLOOR ───</span>
+    </div>
+    <!-- Jeep boss room -->
+    <div style="display:flex;justify-content:center;margin-bottom:14px">
+      <div class="desk-card jeep-card" style="width:220px;text-align:center;--ac:#ffd700" onclick="openModal('jeep')">
+        <div class="pf" style="font-size:.38rem;color:#ffd700;letter-spacing:2px;margin-bottom:4px">★ COMMAND CENTER ★</div>
+        <div class="pixel-desk-wrap" id="jeep-wrap">
+          <!-- populated by JS after functions load -->
+        </div>
+        <div style="font-size:.88rem;font-weight:700;color:#ffd700;margin-top:2px">จีป (Jeep)</div>
+        <div style="font-size:.62rem;color:#665533">เลขา CEO • ประสานงานทุกแผนก</div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:6px;margin-top:4px">
+          <div class="dot idle"></div>
+          <span style="font-size:.6rem;color:#4ade80">พร้อมรับงาน</span>
+        </div>
+      </div>
+    </div>
+    <!-- Agent grid -->
+    <div id="desk-grid" class="desk-grid-cols" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px"></div>
+    <!-- Bottom stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px">
+      <div style="background:#0c0c08;border:1px solid #2a2a14;border-radius:8px;padding:10px;text-align:center">
+        <div class="pf" id="b-total" style="font-size:.6rem;color:#00b4ff">0</div>
+        <div style="font-size:.58rem;color:#333322;margin-top:2px">งานทั้งหมด</div>
+      </div>
+      <div style="background:#0c0c08;border:1px solid #2a2a14;border-radius:8px;padding:10px;text-align:center">
+        <div class="pf" id="b-done" style="font-size:.6rem;color:#4ade80">0</div>
+        <div style="font-size:.58rem;color:#333322;margin-top:2px">เสร็จแล้ว</div>
+      </div>
+      <div style="background:#0c0c08;border:1px solid #2a2a14;border-radius:8px;padding:10px;text-align:center">
+        <div class="pf" style="font-size:.6rem;color:#ffcc00">15</div>
+        <div style="font-size:.58rem;color:#333322;margin-top:2px">แผนก</div>
+      </div>
+      <div style="background:#0c0c08;border:1px solid #2a2a14;border-radius:8px;padding:10px;text-align:center">
+        <div class="pf" style="font-size:.6rem;color:#a78bfa">746</div>
+        <div style="font-size:.58rem;color:#333322;margin-top:2px">Skills</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div id="right-panel" style="padding:12px">
+    <div id="right-content"></div>
+  </div>
+
+</div><!-- end main row -->
+
+<!-- ════ MOBILE NAV ════ -->
+<nav id="mob-nav">
+  <button class="mob-btn" onclick="openDrawer('left')">
+    <span class="mob-icon">📨</span>
+    <span class="mob-label">ส่งงาน</span>
+  </button>
+  <button class="mob-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <span class="mob-icon">🏢</span>
+    <span class="mob-label">ออฟฟิศ</span>
+  </button>
+  <button class="mob-btn" onclick="openDrawer('right')">
+    <span class="mob-icon">📋</span>
+    <span class="mob-label">Task Log</span>
+  </button>
+</nav>
+
+<!-- ════ DRAWERS (mobile) ════ -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawers()"></div>
+<div class="drawer left" id="drawer-left"><div id="drawer-left-content"></div></div>
+<div class="drawer right" id="drawer-right"><div id="drawer-right-content"></div></div>
+
+<!-- ════ AGENT MODAL ════ -->
+<div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- ════ OUTPUT MODAL (Claude Result) ════ -->
+<div id="output-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeOutputModal()">
+  <div class="modal-box" style="max-width:680px;width:95%;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid #2a2a14;flex-shrink:0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div id="output-agent-color" style="font-size:.85rem;font-weight:700;margin-bottom:2px">Agent</div>
+        <div id="output-agent-name" style="font-size:.7rem;color:#555544"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="output-done-badge" style="display:none;background:rgba(74,222,128,.15);color:#4ade80;border:1px solid #4ade80;border-radius:6px;padding:2px 8px;font-size:.65rem">✅ เสร็จแล้ว</span>
+        <button id="output-copy-btn" style="display:none;background:rgba(0,180,255,.1);color:#00b4ff;border:1px solid #00b4ff;border-radius:6px;padding:4px 10px;font-size:.68rem;cursor:pointer;font-family:inherit">📋 Copy</button>
+        <button onclick="closeOutputModal()" style="background:none;border:1px solid #2a2a14;color:#555544;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.75rem">✕</button>
+      </div>
+    </div>
+    <!-- Task -->
+    <div style="padding:10px 20px;background:#08080a;flex-shrink:0;border-bottom:1px solid #1a1a0a">
+      <div style="font-size:.62rem;color:#444433;margin-bottom:2px">Task:</div>
+      <div id="output-task-desc" style="font-size:.75rem;color:#888877"></div>
+    </div>
+    <!-- Output -->
+    <div id="claude-output" style="flex:1;overflow-y:auto;padding:16px 20px;font-size:.8rem;line-height:1.7;color:#c0c0cc;min-height:200px">
+      <span style="color:#555544;font-size:.75rem">⏳ Claude กำลังคิด...</span>
+    </div>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script>
+/* ══════════════ PIXEL ART HELPERS ══════════════ */
+function charSVG(shirtColor) {
+  const c = shirtColor;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 22" width="72" height="66" style="image-rendering:pixelated;display:block;margin:0 auto">
+    <!-- Chair back -->
+    <rect x="1" y="8" width="22" height="3" fill="#7a5010" rx="1"/>
+    <rect x="1" y="8" width="22" height="1" fill="#a06820"/>
+    <!-- Hair -->
+    <rect x="7" y="0" width="10" height="6" fill="#1a0e06"/>
+    <!-- Head -->
+    <rect x="8" y="2" width="8" height="7" fill="#f0c080"/>
+    <!-- Ears -->
+    <rect x="7" y="4" width="1" height="3" fill="#e0b070"/>
+    <rect x="16" y="4" width="1" height="3" fill="#e0b070"/>
+    <!-- Eyes -->
+    <rect x="10" y="5" width="1" height="1" fill="#333"/>
+    <rect x="13" y="5" width="1" height="1" fill="#333"/>
+    <!-- Neck -->
+    <rect x="10" y="9" width="4" height="2" fill="#f0c080"/>
+    <!-- Shirt body -->
+    <rect x="6" y="11" width="12" height="7" fill="${c}"/>
+    <rect x="6" y="11" width="12" height="1" fill="${lighten(c)}"/>
+    <!-- Collar -->
+    <rect x="10" y="11" width="4" height="2" fill="#fff5"/>
+    <!-- Left arm -->
+    <rect x="3" y="11" width="3" height="6" fill="${c}"/>
+    <!-- Right arm -->
+    <rect x="18" y="11" width="3" height="6" fill="${c}"/>
+    <!-- Hands -->
+    <rect x="3" y="17" width="3" height="2" fill="#f0c080"/>
+    <rect x="18" y="17" width="3" height="2" fill="#f0c080"/>
+  </svg>`;
+}
+
+function deskSVG(isWorking, accentColor) {
+  const sc = isWorking ? '#0080ff' : '#001833';
+  const ac = accentColor || '#00b4ff';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 36" width="152" height="68" style="image-rendering:pixelated;display:block;margin:0 auto">
+    <!-- Desk highlight top edge -->
+    <rect x="0" y="0" width="80" height="2" fill="#e8b840" rx="1"/>
+    <!-- Desk surface -->
+    <rect x="0" y="2" width="80" height="10" fill="#c8872a" rx="1"/>
+    <!-- Monitor stand -->
+    <rect x="35" y="5" width="10" height="4" fill="#222"/>
+    <!-- Monitor bezel -->
+    <rect x="18" y="1" width="44" height="9" fill="#1a1a2e" rx="2"/>
+    <!-- Monitor screen -->
+    <rect x="20" y="2" width="40" height="7" fill="${sc}" rx="1"/>
+    <!-- Screen glow when working -->
+    ${isWorking ? `<rect x="20" y="2" width="40" height="7" fill="${ac}" opacity=".25" rx="1"/>` : ''}
+    <!-- Screen content lines -->
+    <rect x="22" y="3" width="20" height="1" fill="${isWorking ? '#fff' : '#0a3'}" opacity=".5"/>
+    <rect x="22" y="5" width="14" height="1" fill="${isWorking ? '#7df' : '#0a3'}" opacity=".4"/>
+    <rect x="22" y="7" width="18" height="1" fill="${isWorking ? '#aef' : '#0a3'}" opacity=".3"/>
+    <!-- Keyboard -->
+    <rect x="16" y="10" width="48" height="4" fill="#2c2c3e" rx="1"/>
+    <rect x="18" y="11" width="44" height="2" fill="#1a1a2c" rx="1"/>
+    <!-- Mouse -->
+    <rect x="66" y="10" width="8" height="5" fill="#2c2c3e" rx="2"/>
+    <rect x="70" y="11" width="1" height="3" fill="#1a1a2c"/>
+    <!-- Papers -->
+    <rect x="64" y="3" width="10" height="7" fill="#fafaf0" opacity=".85"/>
+    <rect x="65" y="5" width="6" height="1" fill="#ccc" opacity=".7"/>
+    <rect x="65" y="7" width="4" height="1" fill="#ccc" opacity=".7"/>
+    <!-- Coffee cup -->
+    <rect x="4" y="3" width="7" height="7" fill="#e8e8e0" rx="1"/>
+    <rect x="5" y="4" width="5" height="5" fill="#6B3A2A"/>
+    <rect x="11" y="5" width="2" height="3" fill="#e8e8e0" rx="1"/>
+    <!-- Desk body -->
+    <rect x="0" y="12" width="80" height="18" fill="#9b6218"/>
+    <!-- Desk shadow/depth -->
+    <rect x="0" y="28" width="80" height="4" fill="#7a4e10" rx="2"/>
+    <!-- Desk legs -->
+    <rect x="4" y="30" width="10" height="6" fill="#8b5e14"/>
+    <rect x="66" y="30" width="10" height="6" fill="#8b5e14"/>
+  </svg>`;
+}
+
+function lighten(hex) {
+  try {
+    const n = parseInt(hex.replace('#',''), 16);
+    const r = Math.min(255, ((n>>16)&0xff)+40);
+    const g = Math.min(255, ((n>>8)&0xff)+40);
+    const b = Math.min(255, (n&0xff)+40);
+    return `rgb(${r},${g},${b})`;
+  } catch { return hex; }
+}
+
+/* Keep inline SVG out of template literals by using placeholders */
+function mkCharHTML(color, id) {
+  return charSVG(color);
+}
+function mkDeskHTML(busy, color) {
+  return deskSVG(busy, color);
+}
+
+/* ══════════════ AGENT DATA ══════════════ */
+const JEEP = {
+  id:'jeep', name:'จีป', nameEn:'Jeep', role:'เลขา CEO',
+  dept:'Command Center', deptId:'cmd', color:'#ffd700',
+  commands:['ประสานงานทุกแผนก','Auto-select agent','ส่งงานให้ทีมที่เหมาะสม'],
+  note:'ประสานงานทุกแผนก รับคำสั่งจาก CEO Pong โดยตรง ฉลาด ร่าเริง ตั้งใจ'
+};
+
+const AGENTS = [
+  {id:'airan', name:'ไอรัน',    nameEn:'AI-Ran',    role:'C-Level Advisor',       dept:'C-Level Suite',    deptId:'clevel',    color:'#ffd700',
+   commands:['/ceo-advisor','/cfo-advisor','/cto-advisor','/cmo-advisor','/coo-advisor','/cpo-advisor','/cro-advisor','/chro-advisor','/ciso-advisor','/chief-of-staff','/executive-mentor','/founder-coach','/board-deck-builder','/strategic-alignment','/ma-playbook','/scenario-war-room','/intl-expansion','/succession-plan','/org-health-diagnostic','/change-management'],
+   note:'ที่ปรึกษา C-Level ทุกด้าน ตั้งแต่ CEO จนถึง CISO'},
+  {id:'kung',  name:'คุง',      nameEn:'Kung',      role:'Engineering Lead',      dept:'Engineering',      deptId:'engineering',color:'#60a5fa',
+   commands:['/senior-architect','/senior-backend','/senior-frontend','/senior-fullstack','/senior-devops','/senior-qa','/code-reviewer','/api-design-reviewer','/api-test-suite-builder','/ci-cd-pipeline-builder','/database-designer','/tdd-guide','/tech-debt-tracker','/changelog-generator','/release-manager','/migration-architect','/playwright-pro','/karpathy-coder'],
+   note:'Senior Engineers ทุกสาย: Backend, Frontend, DevOps, QA, Architecture'},
+  {id:'robot', name:'โรบ็อต',  nameEn:'Robot',     role:'AI & Agent Specialist', dept:'AI & Agents',     deptId:'ai',         color:'#a78bfa',
+   commands:['/agent-designer','/agent-workflow-designer','/agenthub','/autoresearch-agent','/mcp-server-builder','/rag-architect','/llm-cost-optimizer','/prompt-engineer-toolkit','/prompt-governance','/self-improving-agent','/ai-security','/ai-use-case-finder','/automation-workflow'],
+   note:'ออกแบบ สร้าง และจัดการ AI Agents — MCP, RAG, Prompts, Automation'},
+  {id:'cloud', name:'คลาวด์',  nameEn:'Cloud',     role:'Cloud Architect',       dept:'Cloud & Infra',   deptId:'cloud',      color:'#38bdf8',
+   commands:['/aws-solution-architect','/azure-cloud-architect','/gcp-cloud-architect','/docker-development','/helm-chart-builder','/terraform-patterns','/ci-cd-pipeline-builder','/observability-designer','/incident-commander','/runbook-generator'],
+   note:'Cloud Architecture บน AWS, Azure, GCP รวมถึง IaC และ DevOps'},
+  {id:'red',   name:'เรด',     nameEn:'Red',       role:'Security Lead',         dept:'Security',         deptId:'security',   color:'#f87171',
+   commands:['/security-pen-testing','/cloud-security','/threat-detection','/red-team','/adversarial-reviewer','/skill-security-auditor','/soc2-compliance','/secrets-vault-manager','/ai-security','/security-scan'],
+   note:'Security, Pen Testing, Compliance & Risk'},
+  {id:'mark',  name:'มาร์ค',   nameEn:'Mark',      role:'Marketing Lead',        dept:'Marketing',        deptId:'marketing',  color:'#fb923c',
+   commands:['/marketing-strategy-pmm','/content-strategy','/content-creator','/content-production','/social-media-manager','/paid-ads','/facebook-ad-campaign','/google-ads-campaign','/tiktok-ad-script','/launch-strategy','/brand-voice-guide','/x-twitter-growth'],
+   note:'Marketing Strategy ครบวงจร: Digital, Content, Social, Paid Ads'},
+  {id:'search',name:'เซิร์ช',  nameEn:'Search',    role:'SEO Lead',              dept:'SEO',              deptId:'seo',        color:'#34d399',
+   commands:['/seo-audit','/ai-seo','/programmatic-seo','/keyword-research','/technical-seo-checklist','/local-seo-plan','/schema-markup','/youtube-seo','/seo-content-brief','/app-store-optimization','/link-building-plan'],
+   note:'SEO ครบทุกรูปแบบ: Technical, Content, Local, YouTube, ASO'},
+  {id:'sale',  name:'เซลล์',   nameEn:'Sale',      role:'Sales Lead',            dept:'Sales & Revenue',  deptId:'sales',      color:'#fbbf24',
+   commands:['/sales-engineer','/revenue-operations','/customer-success-manager','/sales-funnel-builder','/sales-script','/sales-deck','/cold-email','/objection-handler','/win-loss-analysis','/churn-prevention','/high-ticket-sales-page'],
+   note:'Sales & Revenue Growth: Funnel, Script, Outreach, Customer Success'},
+  {id:'pro',   name:'โปร',     nameEn:'Pro',       role:'Product Lead',          dept:'Product',          deptId:'product',    color:'#818cf8',
+   commands:['/senior-pm','/agile-product-owner','/product-strategist','/product-discovery','/product-analytics','/competitive-teardown','/scrum-master','/experiment-designer','/code-to-prd','/roadmap-communicator','/product-roadmap'],
+   note:'Product Management ตั้งแต่ Discovery จนถึง Launch'},
+  {id:'convert',name:'คอนเวิร์ต',nameEn:'Convert',role:'CRO Specialist',        dept:'CRO',              deptId:'cro',        color:'#2dd4bf',
+   commands:['/page-cro','/form-cro','/onboarding-cro','/signup-flow-cro','/popup-cro','/paywall-upgrade-cro','/landing-page-audit','/checkout-optimizer','/ab-test-setup','/conversion-funnel-analysis'],
+   note:'Conversion Rate Optimization ทุก Touch Point'},
+  {id:'fin',   name:'ฟิน',     nameEn:'Fin',       role:'Finance Lead',          dept:'Finance',          deptId:'finance',    color:'#4ade80',
+   commands:['/financial-analyst','/business-investment-advisor','/saas-metrics-coach','/financial-model','/revenue-forecast','/cash-flow-forecast','/pricing-strategy','/breakeven-analysis','/unit-economics','/roi-calculator'],
+   note:'Financial Analysis, Modeling & Strategy'},
+  {id:'lex',   name:'เล็กซ์',  nameEn:'Lex',       role:'Legal Lead',            dept:'Legal & Compliance',deptId:'legal',     color:'#e879f9',
+   commands:['/gdpr-dsgvo-expert','/soc2-compliance','/information-security-manager-iso27001','/fda-consultant-specialist','/risk-management-specialist','/privacy-policy','/contract-writer','/nda-template','/terms-of-service','/compliance-checklist'],
+   note:'Legal, Regulatory Compliance, Risk Management'},
+  {id:'hart',  name:'ฮาร์ต',   nameEn:'Hart',      role:'HR Lead',               dept:'HR & People',      deptId:'hr',         color:'#f9a8d4',
+   commands:['/interview-system-designer','/hiring-scorecard','/employee-handbook','/performance-review','/one-on-one-template','/team-charter','/training-plan','/job-posting','/onboarding-checklist','/culture-document'],
+   note:'HR & People Operations ครบวงจร'},
+  {id:'copy',  name:'คอปปี้',  nameEn:'Copy',      role:'Content Lead',          dept:'Content & Copy',   deptId:'content',    color:'#fdba74',
+   commands:['/copywriting','/blog-post','/video-script','/youtube-strategy','/podcast-launch','/white-paper','/press-release','/case-study','/thought-leadership','/hook-generator','/content-calendar'],
+   note:'Content & Copywriting ทุกรูปแบบและทุก Platform'},
+  {id:'shop',  name:'ช้อป',    nameEn:'Shop',      role:'E-commerce Lead',       dept:'E-commerce',       deptId:'ecommerce',  color:'#86efac',
+   commands:['/store-launch-plan','/product-description','/marketplace-launch-plan','/marketplace-seo','/cart-recovery-sms','/flash-sale-campaign','/loyalty-program','/social-media-calendar','/instagram-carousel','/tiktok-script'],
+   note:'E-commerce & Marketplace: Store, Listing, Social Commerce'},
+  {id:'frontend', name:'ฟรอนต์',  nameEn:'Front',   role:'Senior Frontend Dev',   dept:'Frontend',         deptId:'frontend',   color:'#22d3ee',
+   commands:['/senior-frontend','/artifacts-builder','/react-best-practices','/nextjs-patterns','/tailwind-component','/ui-component-builder','/performance-audit','/accessibility-check','/responsive-design','/animation-builder'],
+   note:'React, Next.js, TypeScript, Tailwind CSS — สร้าง UI ที่สวยงามและ performant'},
+  {id:'backend',  name:'แบ็คเอนด์',nameEn:'Back',   role:'Senior Backend Dev',    dept:'Backend',          deptId:'backend',    color:'#34d399',
+   commands:['/senior-backend','/api-design-reviewer','/rest-api-builder','/graphql-builder','/auth-system','/middleware-builder','/rate-limiter','/webhook-handler','/background-jobs','/microservice-design'],
+   note:'Node.js, Express, Python, Go — API, Auth, Microservices, Performance'},
+  {id:'db',       name:'ดีบี',     nameEn:'DB',      role:'Database Architect',    dept:'Database',         deptId:'database',   color:'#fb923c',
+   commands:['/database-architect','/sql-pro','/database-migration','/database-optimizer','/postgres-schema-design','/supabase-postgres-best-practices','/postgresql-optimization','/neon-instagres','/database-index-tuner','/query-optimizer'],
+   note:'PostgreSQL, MySQL, MongoDB, Supabase, Redis — Schema, Query, Migration, Optimization'},
+];
+
+const DEPT_LABELS = {
+  clevel:'👑 C-Level',engineering:'⚙️ Eng',ai:'🤖 AI',cloud:'☁️ Cloud',
+  security:'🛡️ Sec',marketing:'📢 Mkt',seo:'🔍 SEO',sales:'💰 Sales',
+  product:'📱 Product',cro:'📊 CRO',finance:'💹 Finance',legal:'⚖️ Legal',
+  hr:'👥 HR',content:'✍️ Content',ecommerce:'🛒 E-com',
+  frontend:'🖥️ Frontend',backend:'⚙️ Backend',database:'🗄️ DB'
+};
+
+const KEYWORDS = {
+  engineering:['code','bug','api','database','backend','frontend','deploy','git','test','debug','error','build','architect'],
+  ai:['agent','ai','prompt','rag','llm','model','automation','workflow','claude','gpt'],
+  marketing:['marketing','brand','campaign','social','advertise','tiktok','facebook','ad','growth'],
+  seo:['seo','search','keyword','rank','google','traffic','meta','sitemap','backlink'],
+  sales:['sale','funnel','revenue','customer','deal','prospect','cold email','pitch'],
+  finance:['finance','budget','cost','price','profit','roi','cash','saas metrics','breakeven'],
+  legal:['legal','contract','gdpr','compliance','privacy','terms','policy','nda','regulatory'],
+  hr:['hr','hire','team','employee','recruit','onboard','performance','culture'],
+  content:['blog','write','article','copy','video','podcast','youtube','post','script'],
+  ecommerce:['shop','product','store','marketplace','cart','order','listing'],
+  cloud:['cloud','aws','azure','gcp','docker','kubernetes','deploy','server','infra'],
+  security:['security','hack','vulnerability','pen test','threat','firewall'],
+  cro:['conversion','cro','landing page','signup','checkout','form','popup'],
+  product:['product','roadmap','feature','sprint','backlog','user story','prd','agile'],
+  frontend:['react','next.js','nextjs','vue','svelte','html','css','tailwind','component','ui design','responsive','animation','frontend'],
+  backend:['node','express','fastapi','django','laravel','rest api','graphql','auth','jwt','middleware','backend','server-side'],
+  database:['sql','database','db','postgres','mysql','mongodb','supabase','redis','query','schema','migration','index','orm','prisma','drizzle'],
+};
+
+/* ══════════════ STATE ══════════════ */
+let states = {};
+let tasks  = [];
+let db     = null;
+let activeFilter = 'all';
+
+AGENTS.forEach(a => { states[a.id] = {status:'idle', currentTask:null, done:0}; });
+
+/* ══════════════ BADGE HELPER ══════════════ */
+function setBadge(text, type) {
+  ['fb-badge','fb-badge-mob'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = text; el.className = `fb ${type}`; }
+  });
+}
+
+/* ══════════════ AUTO CLEANUP (90 days) ══════════════ */
+function autoCleanup() {
+  if (!db) return;
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+  db.ref('hq/tasks').orderByChild('at').endAt(cutoff).once('value', snap => {
+    const upd = {};
+    snap.forEach(c => { upd[c.key] = null; });
+    const count = Object.keys(upd).length;
+    if (count > 0) {
+      db.ref('hq/tasks').update(upd);
+      console.log(`🧹 Auto-cleanup: ลบ ${count} tasks เก่ากว่า 90 วัน`);
+    }
+  });
+}
+
+/* ══════════════ FIREBASE ══════════════ */
+function initFirebase() {
+  if (typeof firebaseConfig === 'undefined') return;
+  if (!firebaseConfig.databaseURL) return;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+
+    db.ref('hq/agents').on('value', snap => {
+      const d = snap.val(); if (!d) return;
+      Object.keys(d).forEach(id => { states[id] = {...(states[id]||{}), ...d[id]}; });
+      renderDesks(); updateStats();
+    }, err => {
+      console.warn('agents permission:', err.message);
+      setBadge('⚠️ Rules ยังไม่ได้ตั้ง', 'demo');
+    });
+
+    db.ref('hq/tasks').orderByChild('at').limitToLast(60).on('value', snap => {
+      const d = snap.val(); if (!d) return;
+      tasks = Object.entries(d).map(([k,v])=>({id:k,...v})).sort((a,b)=>b.at-a.at);
+      renderLog(); renderActive(); renderLeaderboard();
+    }, err => {
+      console.warn('tasks permission:', err.message);
+    });
+
+    setBadge('🔥 Firebase Live', 'live');
+
+    // Run cleanup once on connect
+    setTimeout(autoCleanup, 3000);
+    // Run daily cleanup
+    setInterval(autoCleanup, 24 * 60 * 60 * 1000);
+  } catch(e) { console.warn('Firebase:', e); }
+}
+
+/* ══════════════ CLOCK ══════════════ */
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
+
+/* ══════════════ RANK ══════════════ */
+function rank(n) {
+  if (n>=20) return {icon:'⭐',name:'Legend',cls:'r4'};
+  if (n>=10) return {icon:'💎',name:'Expert', cls:'r3'};
+  if (n>=5)  return {icon:'🔥',name:'Pro',    cls:'r2'};
+  if (n>=1)  return {icon:'✅',name:'Active', cls:'r1'};
+  return           {icon:'🌱',name:'Ready',  cls:'r0'};
+}
+
+/* ══════════════ RENDER DESKS ══════════════ */
+function renderDesks() {
+  const list = activeFilter === 'all' ? AGENTS : AGENTS.filter(a => a.deptId === activeFilter);
+  document.getElementById('desk-grid').innerHTML = list.map(a => {
+    const s = states[a.id] || {status:'idle', done:0};
+    const busy = s.status === 'working' || s.status === 'busy';
+    const r = rank(s.done||0);
+    const xp = Math.min((s.done||0)*10, 100);
+    const taskText = (s.currentTask||'').substring(0,28);
+
+    return `<div class="desk-card ${busy?'busy':''}" id="dk-${a.id}" style="--ac:${a.color}" onclick="openModal('${a.id}')">
+      <!-- Dept badge + status -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:.54rem;background:${a.color}20;color:${a.color};border:1px solid ${a.color}40;border-radius:9999px;padding:1px 7px">${a.dept}</span>
+        <div class="dot ${busy?'busy':'idle'}"></div>
+      </div>
+      <!-- Pixel scene -->
+      <div class="pixel-desk-wrap ${busy?'work-anim':'idle-anim'}">
+        ${busy ? `<div class="speech-bubble">${taskText}${(s.currentTask||'').length>28?'...':''}</div>` : ''}
+        <div class="char-body">${charSVG(a.color)}</div>
+        ${deskSVG(busy, a.color)}
+      </div>
+      <!-- Name -->
+      <div style="text-align:center;margin-top:2px">
+        <div style="font-size:.82rem;font-weight:700;color:${a.color}">${a.name}</div>
+        <div style="font-size:.58rem;color:#444433">${a.role}</div>
+      </div>
+      <!-- XP -->
+      <div class="xpbar" style="margin-top:6px">
+        <div class="xpfill" style="width:${xp}%;background:linear-gradient(90deg,${a.color},${lighten(a.color)})"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        <span class="${r.cls}" style="font-size:.5rem">${r.icon} ${r.name}</span>
+        <span style="font-size:.5rem;color:#333322">${s.done||0} งาน</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════ LEFT PANEL CONTENT ══════════════ */
+function renderLeft() {
+  return `
+  <div class="pf" style="font-size:.44rem;color:#00b4ff;letter-spacing:3px;margin-bottom:10px">▶ DISPATCH</div>
+  <!-- Jeep mini status -->
+  <div style="background:linear-gradient(135deg,#1a0828,#0c0c14);border:1px solid #ffd70066;border-radius:10px;padding:10px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="font-size:1.4rem">👩‍💼</span>
+      <div style="flex:1"><div style="font-size:.78rem;color:#ffd700;font-weight:700">จีป</div>
+        <div style="font-size:.58rem;color:#665533">เลขา CEO</div></div>
+      <div class="dot idle"></div>
+    </div>
+    <div style="font-size:.65rem;color:#887755;font-style:italic">"บอกได้เลยครับ!"</div>
+  </div>
+  <!-- Input -->
+  <textarea id="task-input" class="inp" rows="3" style="margin-bottom:8px"
+    placeholder="สั่งงานจีปได้เลย...&#10;เช่น: เขียน blog post,&#10;ตรวจ SEO, วิเคราะห์ finance..."></textarea>
+  <select id="agent-sel" class="inp" style="padding:8px 10px;margin-bottom:10px">
+    <option value="auto">🤖 จีปเลือกให้อัตโนมัติ</option>
+    ${AGENTS.map(a=>`<option value="${a.id}">${a.color.includes('ffd')?'👑':''} ${a.name} — ${a.dept}</option>`).join('')}
+  </select>
+  <button class="btn-send" onclick="dispatch()" style="margin-bottom:16px">📨 ส่งงาน &nbsp;<span style="font-size:.62rem;opacity:.5">Ctrl+↵</span></button>
+  <!-- Active -->
+  <div class="pf" style="font-size:.42rem;color:#ffcc00;letter-spacing:2px;margin-bottom:6px">⚡ ACTIVE</div>
+  <div id="active-list" style="max-height:200px;overflow-y:auto">
+    <div style="color:#333322;font-size:.7rem;text-align:center;padding:16px">💤 ยังไม่มีงาน</div>
+  </div>
+  <!-- Slash cmds -->
+  <div style="margin-top:14px;padding-top:12px;border-top:1px solid #2a2a14">
+    <div class="pf" style="font-size:.38rem;color:#333322;letter-spacing:2px;margin-bottom:6px">SLASH COMMANDS</div>
+    <div style="font-size:.6rem;color:#3a3a22;line-height:2">
+      /review &nbsp;/security-scan<br>/seo-auditor &nbsp;/focused-fix<br>/plugin-audit
+    </div>
+  </div>`;
+}
+
+/* ══════════════ RIGHT PANEL CONTENT ══════════════ */
+function renderRight() {
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="pf" style="font-size:.42rem;color:#00b4ff;letter-spacing:2px">📋 TASK LOG</div>
+    <button onclick="clearLog()" style="font-size:.6rem;color:#333322;background:none;border:none;cursor:pointer">ล้าง</button>
+  </div>
+  <div id="task-log" style="max-height:250px;overflow-y:auto;margin-bottom:14px">
+    <div style="color:#333322;font-size:.7rem;text-align:center;padding:16px">ยังไม่มีประวัติ 📋</div>
+  </div>
+  <div class="pf" style="font-size:.42rem;color:#ffd700;letter-spacing:2px;margin-bottom:8px">🏆 LEADERBOARD</div>
+  <div id="leaderboard"></div>
+  <div style="margin-top:14px;padding-top:12px;border-top:1px solid #2a2a14">
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;margin-bottom:4px">
+      <span style="color:#333322">งานทั้งหมด</span><span id="r-total" style="color:#c0c0c8">0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;margin-bottom:4px">
+      <span style="color:#333322">เสร็จแล้ว</span><span id="r-done" style="color:#4ade80">0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.68rem">
+      <span style="color:#333322">Skills พร้อมใช้</span><span style="color:#00b4ff">746</span>
+    </div>
+  </div>`;
+}
+
+/* ══════════════ FILTERS ══════════════ */
+function initFilters() {
+  const c = document.getElementById('filters');
+  AGENTS.forEach(a => {
+    if (c.querySelector(`[data-d="${a.deptId}"]`)) return;
+    const el = document.createElement('div');
+    el.className = 'filt'; el.setAttribute('data-d', a.deptId);
+    el.textContent = DEPT_LABELS[a.deptId]||a.deptId;
+    el.onclick = () => filter(a.deptId);
+    c.appendChild(el);
+  });
+}
+function filter(d) {
+  activeFilter = d;
+  document.querySelectorAll('.filt').forEach(el => el.classList.toggle('on', el.getAttribute('data-d')===d));
+  renderDesks();
+}
+
+/* ══════════════ AUTO-DETECT AGENT ══════════════ */
+function autoAgent(text) {
+  const t = text.toLowerCase();
+  for (const [d, words] of Object.entries(KEYWORDS)) {
+    if (words.some(w => t.includes(w))) {
+      const a = AGENTS.find(x => x.deptId === d);
+      if (a) return a.id;
+    }
+  }
+  return AGENTS[0].id;
+}
+
+/* ══════════════ SERVER CHECK ══════════════ */
+// file:// → local server, http/https → same origin (cloud หรือ local ผ่าน Express)
+const SERVER = window.location.protocol === 'file:' ? 'http://localhost:3001' : '';
+let serverOnline = false;
+
+async function checkServer() {
+  try {
+    const r = await fetch(`${SERVER}/health`, { signal: AbortSignal.timeout(2000) });
+    serverOnline = r.ok;
+  } catch { serverOnline = false; }
+  const badge = document.getElementById('server-badge');
+  if (badge) {
+    badge.textContent = serverOnline ? '🟢 Server Online' : '🔴 Demo Mode';
+    badge.style.color  = serverOnline ? '#4ade80' : '#ffcc00';
+  }
+  return serverOnline;
+}
+
+/* ══════════════ DISPATCH ══════════════ */
+async function dispatch() {
+  const inp = document.getElementById('task-input') || document.getElementById('task-input-d');
+  const sel = document.getElementById('agent-sel')  || document.getElementById('agent-sel-d');
+  if (!inp) return;
+  const desc = inp.value.trim();
+  if (!desc) { inp.style.borderColor='#f87171'; setTimeout(()=>inp.style.borderColor='',1500); return; }
+
+  let aid = sel ? sel.value : 'auto';
+  if (aid === 'auto') aid = autoAgent(desc);
+  const agent = AGENTS.find(a => a.id === aid) || AGENTS[0];
+
+  const task = {
+    id:'T'+Date.now(), agentId:agent.id, agentName:agent.name,
+    desc, status:'working', at:Date.now(), done:null
+  };
+
+  states[agent.id] = {...(states[agent.id]||{}), status:'working',
+    currentTask: desc.substring(0,40)+(desc.length>40?'...':'')
+  };
+  tasks.unshift(task);
+
+  if (db) {
+    db.ref(`hq/tasks/${task.id}`).set(task).catch(()=>{});
+    db.ref(`hq/agents/${agent.id}`).update({status:'working',currentTask:task.desc.substring(0,50),lastActive:Date.now()}).catch(()=>{});
+  }
+
+  renderDesks(); renderActive(); renderLog(); updateStats();
+  inp.value = '';
+
+  // animate jeep bubble
+  const jb = document.getElementById('jeep-bubble');
+  if (jb) {
+    jb.textContent = `ส่งงานให้ ${agent.name} แล้วครับ!`;
+    jb.style.transform = 'translateX(-50%) scale(1)';
+    setTimeout(() => { jb.style.transform = ''; jb.textContent = 'พร้อมรับคำสั่งครับ!'; }, 3000);
+  }
+
+  // ── ถ้า server online ให้ยิงไป Claude จริงๆ ──
+  const online = await checkServer();
+  if (online) {
+    openOutputModal(agent, desc);
+    streamFromClaude(agent, task, desc);
+  } else {
+    // Demo mode — จำลองเหมือนเดิม
+    setTimeout(() => complete(task, agent), 5000 + Math.random()*8000);
+  }
+}
+
+/* ══════════════ STREAM FROM CLAUDE ══════════════ */
+async function streamFromClaude(agent, task, desc) {
+  const outputEl = document.getElementById('claude-output');
+  if (!outputEl) return;
+
+  let fullText = '';
+
+  try {
+    const res = await fetch(`${SERVER}/task`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId: agent.id, task: desc })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const lines = decoder.decode(value).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const json = JSON.parse(line.slice(6));
+          if (json.text) {
+            fullText += json.text;
+            outputEl.innerHTML = renderMarkdown(fullText);
+            outputEl.scrollTop = outputEl.scrollHeight;
+          }
+          if (json.done) {
+            complete(task, agent);
+            document.getElementById('output-done-badge').style.display = 'inline-block';
+            document.getElementById('output-copy-btn').style.display   = 'inline-block';
+            document.getElementById('output-copy-btn').onclick = () => {
+              navigator.clipboard.writeText(fullText);
+              document.getElementById('output-copy-btn').textContent = '✅ Copied!';
+            };
+          }
+          if (json.error) {
+            outputEl.innerHTML += `<p style="color:#f87171">❌ ${json.error}</p>`;
+            complete(task, agent);
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    if (outputEl) outputEl.innerHTML += `<p style="color:#f87171">❌ เชื่อมต่อ server ไม่ได้: ${err.message}</p>`;
+    complete(task, agent);
+  }
+}
+
+/* ══════════════ OUTPUT MODAL ══════════════ */
+function openOutputModal(agent, desc) {
+  document.getElementById('output-modal').style.display = 'flex';
+  document.getElementById('output-agent-name').textContent  = `${agent.name} — ${agent.role}`;
+  document.getElementById('output-agent-color').style.color = agent.color;
+  document.getElementById('output-task-desc').textContent   = desc;
+  document.getElementById('output-done-badge').style.display = 'none';
+  document.getElementById('output-copy-btn').style.display   = 'none';
+  document.getElementById('output-copy-btn').textContent     = '📋 Copy';
+  document.getElementById('claude-output').innerHTML =
+    '<span style="color:#555544;font-size:.75rem">⏳ Claude กำลังคิด...</span>';
+}
+function closeOutputModal() { document.getElementById('output-modal').style.display = 'none'; }
+
+/* ══════════════ SIMPLE MARKDOWN ══════════════ */
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```([\s\S]*?)```/g, '<pre style="background:#0a0a18;border:1px solid #2a2a3a;border-radius:6px;padding:10px;overflow-x:auto;font-size:.75rem;margin:6px 0"><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g, '<code style="background:#1a1a2e;padding:1px 5px;border-radius:3px;font-size:.8rem;color:#a78bfa">$1</code>')
+    .replace(/^### (.+)$/gm, '<h3 style="color:#ffd700;font-size:.85rem;margin:10px 0 4px">$1</h3>')
+    .replace(/^## (.+)$/gm,  '<h2 style="color:#00b4ff;font-size:.9rem;margin:12px 0 5px">$1</h2>')
+    .replace(/^# (.+)$/gm,   '<h1 style="color:#00b4ff;font-size:1rem;margin:14px 0 6px">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#e0e0e0">$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em style="color:#aaa">$1</em>')
+    .replace(/^- (.+)$/gm,    '<div style="margin:2px 0">• $1</div>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="margin:2px 0">$1. $2</div>')
+    .replace(/\n/g, '<br>');
+}
+
+/* ══════════════ COMPLETE ══════════════ */
+function complete(task, agent) {
+  task.status = 'completed'; task.done = Date.now();
+  states[agent.id] = {...states[agent.id], status:'idle', currentTask:null,
+    done:(states[agent.id].done||0)+1
+  };
+  if (db) {
+    db.ref(`hq/tasks/${task.id}`).update({status:'completed',done:Date.now()}).catch(()=>{});
+    db.ref(`hq/agents/${agent.id}`).update({status:'idle',currentTask:null,done:states[agent.id].done}).catch(()=>{});
+  }
+  renderDesks(); renderActive(); renderLog(); updateStats(); renderLeaderboard();
+  const dk = document.getElementById(`dk-${agent.id}`);
+  if (dk) { dk.classList.add('done-flash'); setTimeout(()=>dk.classList.remove('done-flash'),2500); }
+}
+
+/* ══════════════ RENDER ACTIVE ══════════════ */
+function renderActive() {
+  const list = tasks.filter(t => t.status === 'working');
+  const html = list.length
+    ? list.map(t => `<div class="task-item busy">
+        <div style="font-size:.66rem;color:#ffcc00">${t.agentName}</div>
+        <div style="font-size:.68rem;color:#b0b0a8;margin-top:2px">${t.desc.substring(0,55)}${t.desc.length>55?'...':''}</div>
+        <div style="font-size:.56rem;color:#333322;margin-top:1px">${ago(t.at)}</div>
+      </div>`).join('')
+    : '<div style="color:#333322;font-size:.7rem;text-align:center;padding:16px">💤 ยังไม่มีงาน</div>';
+  document.querySelectorAll('#active-list').forEach(el => el.innerHTML = html);
+}
+
+/* ══════════════ RENDER LOG ══════════════ */
+function renderLog() {
+  const html = tasks.length
+    ? tasks.slice(0,40).map(t => `<div class="task-item ${t.status}">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.66rem;color:${t.status==='completed'?'#4ade80':'#ffcc00'}">${t.agentName}</span>
+          <span style="font-size:.6rem">${t.status==='completed'?'✅':'⚡'}</span>
+        </div>
+        <div style="font-size:.68rem;color:#b0b0a8;margin-top:2px">${t.desc.substring(0,50)}${t.desc.length>50?'...':''}</div>
+        <div style="font-size:.56rem;color:#333322;margin-top:1px">${ago(t.at)}</div>
+      </div>`).join('')
+    : '<div style="color:#333322;font-size:.7rem;text-align:center;padding:16px">ยังไม่มีประวัติ 📋</div>';
+  document.querySelectorAll('#task-log').forEach(el => el.innerHTML = html);
+}
+
+/* ══════════════ LEADERBOARD ══════════════ */
+function renderLeaderboard() {
+  const sorted = [...AGENTS].map(a=>({...a,n:states[a.id]?.done||0})).sort((a,b)=>b.n-a.n).slice(0,8);
+  const medals = ['🥇','🥈','🥉'];
+  const html = sorted.map((a,i) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+      <span style="font-size:.66rem;width:16px;text-align:center">${medals[i]||`${i+1}.`}</span>
+      <div style="width:20px;height:20px;border-radius:50%;background:${a.color}22;border:1px solid ${a.color}55;display:flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0">${a.name.charAt(0)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.66rem;color:#b0b0a8">${a.name}</div>
+        <div class="xpbar"><div class="xpfill" style="width:${Math.min(a.n*10,100)}%;background:${a.color}"></div></div>
+      </div>
+      <span style="font-size:.6rem;color:#444433">${a.n}</span>
+    </div>`).join('');
+  document.querySelectorAll('#leaderboard').forEach(el => el.innerHTML = html);
+}
+
+/* ══════════════ STATS ══════════════ */
+function updateStats() {
+  const busy = Object.values(states).filter(s=>s.status==='working'||s.status==='busy').length;
+  const idle = AGENTS.length - busy;
+  // desktop header
+  const di = document.getElementById('stat-idle'); if(di) di.textContent = idle;
+  const db2 = document.getElementById('stat-busy'); if(db2) db2.textContent = busy;
+  // mobile header
+  const mi = document.getElementById('stat-idle-m'); if(mi) mi.textContent = idle;
+  const mb = document.getElementById('stat-busy-m'); if(mb) mb.textContent = busy;
+  // sync firebase badge
+  const fbb = document.getElementById('fb-badge-mob');
+  const fbd = document.getElementById('fb-badge');
+  if(fbb && fbd) { fbb.textContent = fbd.textContent; fbb.className = fbd.className; }
+  const total = tasks.length, done = tasks.filter(t=>t.status==='completed').length;
+  const bt = document.getElementById('b-total'); if(bt) bt.textContent = total;
+  const bd = document.getElementById('b-done');  if(bd) bd.textContent  = done;
+  document.querySelectorAll('#r-total').forEach(el => el.textContent = total);
+  document.querySelectorAll('#r-done').forEach(el  => el.textContent = done);
+}
+
+/* ══════════════ MODAL ══════════════ */
+function openModal(id) {
+  const a = id==='jeep' ? JEEP : AGENTS.find(x=>x.id===id);
+  if (!a) return;
+  const s = states[a.id]||{status:'idle',done:0};
+  const r = rank(s.done||0);
+  document.getElementById('modal-box').style.setProperty('--mcolor', a.color);
+  document.getElementById('modal-box').innerHTML = `
+    <div style="border-bottom:1px solid #2a2a14;padding-bottom:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="animation:float 2.5s ease-in-out infinite;flex-shrink:0">${charSVG(a.color)}</div>
+        <div>
+          <div style="font-size:1.05rem;font-weight:700;color:${a.color}">${a.name} <span style="font-size:.72rem;color:#444433">(${a.nameEn||''})</span></div>
+          <div style="font-size:.74rem;color:#555544;margin-top:2px">${a.role}</div>
+          <span style="font-size:.6rem;background:${a.color}20;color:${a.color};border:1px solid ${a.color}40;border-radius:9999px;padding:2px 9px;display:inline-block;margin-top:5px">${a.dept}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:10px">
+        <div><div style="font-size:.54rem;color:#333322">สถานะ</div>
+          <div style="font-size:.7rem;color:${s.status==='idle'?'#4ade80':'#ffcc00'}">${s.status==='idle'?'✅ ว่าง':'⚡ ทำงาน'}</div></div>
+        <div><div style="font-size:.54rem;color:#333322">Rank</div>
+          <div class="${r.cls}" style="font-size:.7rem">${r.icon} ${r.name}</div></div>
+        <div><div style="font-size:.54rem;color:#333322">เสร็จ</div>
+          <div style="font-size:.7rem;color:#b0b0a8">${s.done||0} งาน</div></div>
+        <div><div style="font-size:.54rem;color:#333322">Skills</div>
+          <div style="font-size:.7rem;color:#00b4ff">${a.commands.length}</div></div>
+      </div>
+    </div>
+    <div style="font-size:.74rem;color:#555544;margin-bottom:10px;font-style:italic;line-height:1.5">${a.note}</div>
+    <div style="font-size:.5rem;color:#333322;letter-spacing:2px;margin-bottom:6px">COMMANDS / SKILLS (${a.commands.length})</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:14px">
+      ${a.commands.map(c=>`<span class="cmd" onclick="useCmd('${c}')">${c}</span>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeModal();setTimeout(()=>{const i=document.getElementById('task-input')||document.getElementById('task-input-d');const s=document.getElementById('agent-sel')||document.getElementById('agent-sel-d');if(s)s.value='${a.id}';if(i)i.focus()},100)"
+        style="background:${a.color}20;border:1px solid ${a.color};color:${a.color};border-radius:8px;padding:9px 0;cursor:pointer;font-family:inherit;font-size:.76rem;flex:1">
+        📨 ส่งงานให้ ${a.name}
+      </button>
+      <button onclick="closeModal()"
+        style="background:#0c0c08;border:1px solid #2a2a14;color:#555544;border-radius:8px;padding:9px 14px;cursor:pointer;font-family:inherit;font-size:.76rem">
+        ปิด
+      </button>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function useCmd(c) {
+  const inp = document.getElementById('task-input')||document.getElementById('task-input-d');
+  if (inp) inp.value = c; closeModal();
+}
+
+/* ══════════════ MOBILE DRAWERS ══════════════ */
+function openDrawer(side) {
+  document.getElementById('drawer-overlay').style.display = 'block';
+  document.getElementById(`drawer-${side}`).classList.add('open');
+  // populate drawer content
+  if (side==='left') {
+    document.getElementById('drawer-left-content').innerHTML =
+      renderLeft().replace('id="task-input"','id="task-input-d"').replace('id="agent-sel"','id="agent-sel-d"');
+  } else {
+    document.getElementById('drawer-right-content').innerHTML = renderRight();
+    renderLeaderboard(); renderLog(); renderActive();
+  }
+}
+function closeDrawers() {
+  document.getElementById('drawer-overlay').style.display = 'none';
+  document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+}
+
+
+/* ══════════════ UTILS ══════════════ */
+function ago(ts) {
+  const d = Date.now()-ts;
+  if (d<60000) return `${Math.floor(d/1000)}s ที่แล้ว`;
+  if (d<3600000) return `${Math.floor(d/60000)}m ที่แล้ว`;
+  return `${Math.floor(d/3600000)}h ที่แล้ว`;
+}
+function clearLog() { tasks=[]; renderLog(); renderActive(); updateStats(); }
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModal();
+  if (e.key==='Enter' && e.ctrlKey) dispatch();
+});
+
+/* ══════════════ SCANLINE ══════════════ */
+let sp = 0;
+setInterval(() => {
+  sp = (sp + 2) % window.innerHeight;
+  const sl = document.getElementById('scanline');
+  if (sl) sl.style.top = sp + 'px';
+}, 30);
+
+/* ══════════════ JEEP CARD ══════════════ */
+function renderJeepCard() {
+  document.getElementById('jeep-wrap').innerHTML = `
+    <div id="jeep-bubble" class="speech-bubble" style="max-width:160px">พร้อมรับคำสั่งครับ!</div>
+    <div class="idle-anim"><div class="char-body">${charSVG('#ffd700')}</div></div>
+    ${deskSVG(false,'#ffd700')}`;
+}
+
+/* ══════════════ INIT ══════════════ */
+function init() {
+  // Inject pixel art for Jeep (must run after functions are defined)
+  renderJeepCard();
+
+  // Inject panel content
+  document.getElementById('left-content').innerHTML  = renderLeft();
+  document.getElementById('right-content').innerHTML = renderRight();
+
+  initFirebase();
+  initFilters();
+  renderDesks();
+  renderLeaderboard();
+  updateStats();
+
+  // Check server status
+  checkServer();
+  setInterval(checkServer, 30000);
+}
+init();
+</script>
+</body>
+</html>
