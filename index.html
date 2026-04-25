@@ -274,7 +274,7 @@ header{flex-shrink:0}
         <div style="font-size:.55rem;color:#333322">AI Agent Monitor v2.0</div>
       </div>
       <span id="fb-badge" class="fb demo">⚡ Demo</span>
-      <span id="server-badge" style="font-size:.58rem;color:#ffcc00">🔴 Demo Mode</span>
+      <span id="server-badge" style="font-size:.58rem;color:#ffcc00;cursor:pointer" onclick="openApiModal()">🔴 Demo Mode</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px">
       <div style="text-align:center">
@@ -294,11 +294,17 @@ header{flex-shrink:0}
         <div style="font-size:.52rem;color:#333322">เวลา</div>
       </div>
     </div>
-    <div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px">
-      <span style="font-size:1.1rem">👨‍💼</span>
-      <div>
-        <div style="font-size:.72rem;color:#ffd700;font-weight:700">CEO Pong</div>
-        <div style="font-size:.54rem;color:#554433">Commander in Chief</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="openApiModal()" title="ตั้งค่า API Key"
+        style="background:rgba(0,180,255,.08);border:1px solid #2a2a3a;color:#00b4ff;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.65rem;font-family:inherit">
+        ⚙️ API Key
+      </button>
+      <div style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:1.1rem">👨‍💼</span>
+        <div>
+          <div style="font-size:.72rem;color:#ffd700;font-weight:700">CEO Pong</div>
+          <div style="font-size:.54rem;color:#554433">Commander in Chief</div>
+        </div>
       </div>
     </div>
   </div>
@@ -333,6 +339,9 @@ header{flex-shrink:0}
         <span style="font-size:1rem">👨‍💼</span>
         <span style="font-size:.65rem;color:#ffd700;font-weight:700">Pong</span>
       </div>
+      <button onclick="openApiModal()"
+        style="background:rgba(0,180,255,.08);border:1px solid #2a2a3a;color:#00b4ff;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center"
+        title="API Key">⚙️</button>
       <button onclick="openDrawer('right')"
         style="background:rgba(0,180,255,.08);border:1px solid #2a2a3a;color:#00b4ff;border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">
         📋
@@ -429,6 +438,33 @@ header{flex-shrink:0}
 <!-- ════ AGENT MODAL ════ -->
 <div id="modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- ════ API KEY MODAL ════ -->
+<div id="api-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeApiModal()">
+  <div class="modal-box" style="max-width:420px;width:92%;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:.85rem;font-weight:700;color:#00b4ff">⚙️ Anthropic API Key</div>
+      <button onclick="closeApiModal()" style="background:none;border:1px solid #2a2a14;color:#555544;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:.75rem">✕</button>
+    </div>
+    <div style="font-size:.68rem;color:#555544;margin-bottom:12px;line-height:1.6">
+      ใส่ API Key เพื่อใช้งานบนมือถือโดยไม่ต้องมี server<br>
+      เก็บไว้ใน browser ของคุณเท่านั้น ไม่ได้ส่งออกไปที่ไหน
+    </div>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..."
+      style="width:100%;background:#0c0c1e;border:1px solid #2a2a3a;border-radius:8px;padding:10px 12px;color:#c0c0cc;font-size:.75rem;font-family:inherit;outline:none;margin-bottom:12px">
+    <div style="display:flex;gap:8px">
+      <button onclick="saveApiKey()"
+        style="flex:1;background:rgba(0,180,255,.15);border:1px solid #00b4ff;color:#00b4ff;border-radius:8px;padding:8px;cursor:pointer;font-size:.72rem;font-family:inherit">
+        💾 บันทึก
+      </button>
+      <button onclick="clearApiKey()"
+        style="background:rgba(248,113,113,.1);border:1px solid #f87171;color:#f87171;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.72rem;font-family:inherit">
+        🗑️ ลบ
+      </button>
+    </div>
+    <div id="api-modal-status" style="font-size:.65rem;margin-top:10px;text-align:center"></div>
+  </div>
 </div>
 
 <!-- ════ OUTPUT MODAL (Claude Result) ════ -->
@@ -859,21 +895,58 @@ function autoAgent(text) {
   return AGENTS[0].id;
 }
 
-/* ══════════════ SERVER CHECK ══════════════ */
-// file:// → local server, http/https → same origin (cloud หรือ local ผ่าน Express)
+/* ══════════════ SERVER CHECK + API KEY ══════════════ */
 const SERVER = window.location.protocol === 'file:' ? 'http://localhost:3001' : '';
 let serverOnline = false;
+
+function getApiKey() { return localStorage.getItem('epiccoding_api_key') || ''; }
+
+function openApiModal() {
+  const k = getApiKey();
+  document.getElementById('api-key-input').value = k ? '••••••••••••••••' : '';
+  document.getElementById('api-modal-status').textContent = k ? '✅ มี Key บันทึกไว้แล้ว' : '';
+  document.getElementById('api-modal-status').style.color = '#4ade80';
+  document.getElementById('api-modal').style.display = 'flex';
+}
+function closeApiModal() { document.getElementById('api-modal').style.display = 'none'; }
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val || val.startsWith('•')) {
+    document.getElementById('api-modal-status').textContent = '⚠️ ใส่ key ใหม่ก่อนนะครับ';
+    document.getElementById('api-modal-status').style.color = '#ffcc00';
+    return;
+  }
+  localStorage.setItem('epiccoding_api_key', val);
+  document.getElementById('api-modal-status').textContent = '✅ บันทึกแล้ว!';
+  document.getElementById('api-modal-status').style.color = '#4ade80';
+  updateBadge();
+  setTimeout(closeApiModal, 1200);
+}
+function clearApiKey() {
+  localStorage.removeItem('epiccoding_api_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-modal-status').textContent = '🗑️ ลบ Key แล้ว';
+  document.getElementById('api-modal-status').style.color = '#f87171';
+  updateBadge();
+}
+function updateBadge() {
+  const badge = document.getElementById('server-badge');
+  if (!badge) return;
+  if (serverOnline) {
+    badge.textContent = '🟢 Server Online'; badge.style.color = '#4ade80';
+  } else if (getApiKey()) {
+    badge.textContent = '🔵 API Mode'; badge.style.color = '#00b4ff';
+  } else {
+    badge.textContent = '🔴 Demo Mode'; badge.style.color = '#ffcc00';
+  }
+}
 
 async function checkServer() {
   try {
     const r = await fetch(`${SERVER}/health`, { signal: AbortSignal.timeout(2000) });
     serverOnline = r.ok;
   } catch { serverOnline = false; }
-  const badge = document.getElementById('server-badge');
-  if (badge) {
-    badge.textContent = serverOnline ? '🟢 Server Online' : '🔴 Demo Mode';
-    badge.style.color  = serverOnline ? '#4ade80' : '#ffcc00';
-  }
+  updateBadge();
   return serverOnline;
 }
 
@@ -915,13 +988,16 @@ async function dispatch() {
     setTimeout(() => { jb.style.transform = ''; jb.textContent = 'พร้อมรับคำสั่งครับ!'; }, 3000);
   }
 
-  // ── ถ้า server online ให้ยิงไป Claude จริงๆ ──
+  // ── Priority: Server → Direct API → Demo ──
   const online = await checkServer();
   if (online) {
     openOutputModal(agent, desc);
     streamFromClaude(agent, task, desc);
+  } else if (getApiKey()) {
+    openOutputModal(agent, desc);
+    streamFromAnthropicDirect(agent, task, desc);
   } else {
-    // Demo mode — จำลองเหมือนเดิม
+    // Demo mode
     setTimeout(() => complete(task, agent), 5000 + Math.random()*8000);
   }
 }
@@ -975,6 +1051,99 @@ async function streamFromClaude(agent, task, desc) {
     }
   } catch (err) {
     if (outputEl) outputEl.innerHTML += `<p style="color:#f87171">❌ เชื่อมต่อ server ไม่ได้: ${err.message}</p>`;
+    complete(task, agent);
+  }
+}
+
+/* ══════════════ STREAM DIRECT FROM ANTHROPIC API ══════════════ */
+const AGENT_PROMPTS = {
+  jeep:`คุณคือ จีป เลขาส่วนตัวของ CEO Pong ฉลาด ร่าเริง ตั้งใจ ช่วยประสานงาน วิเคราะห์ สรุป ตอบเป็นภาษาไทย กระชับ ชัดเจน`,
+  airan:`คุณคือที่ปรึกษาระดับ C-Level ครอบคลุม CEO, CFO, CTO, CMO, COO ให้คำแนะนำเชิงกลยุทธ์ ตอบเป็นภาษาไทย มีโครงสร้างชัดเจน`,
+  kung:`คุณคือ Senior Software Engineer และ Tech Lead เชี่ยวชาญ Backend, Frontend, DevOps, QA เขียน code production-ready ตอบเป็นภาษาไทย ใช้ code block`,
+  robot:`คุณคือ AI & Agent Specialist เชี่ยวชาญ AI Agents, RAG, MCP, LLM, Prompt Engineering ตอบเป็นภาษาไทย มีตัวอย่าง code`,
+  cloud:`คุณคือ Cloud Architect เชี่ยวชาญ AWS, Azure, GCP, Docker, Kubernetes, Terraform ตอบเป็นภาษาไทย`,
+  red:`คุณคือ Security Lead เชี่ยวชาญ Security Audit, Threat Detection, Compliance ตอบเป็นภาษาไทย ระบุ risk level`,
+  mark:`คุณคือ Marketing Lead เชี่ยวชาญ Digital Marketing, Content, Paid Ads, Social Media ตอบเป็นภาษาไทย`,
+  search:`คุณคือ SEO Lead เชี่ยวชาญ Technical SEO, Content SEO, Local SEO, YouTube SEO ตอบเป็นภาษาไทย มี checklist`,
+  sale:`คุณคือ Sales Lead เชี่ยวชาญ Sales Funnel, Outreach, Objection Handling ตอบเป็นภาษาไทย`,
+  pro:`คุณคือ Product Lead เชี่ยวชาญ Product Strategy, Roadmap, Agile, PRD ตอบเป็นภาษาไทย`,
+  convert:`คุณคือ CRO Specialist เชี่ยวชาญ Landing Page, Form, Checkout Optimization ตอบเป็นภาษาไทย`,
+  fin:`คุณคือ Finance Lead เชี่ยวชาญ Financial Model, Revenue Forecast, Pricing Strategy ตอบเป็นภาษาไทย`,
+  lex:`คุณคือ Legal Lead เชี่ยวชาญ GDPR, Compliance, Contract Law, Risk Management ตอบเป็นภาษาไทย`,
+  hart:`คุณคือ HR Lead เชี่ยวชาญ Recruiting, Performance, Culture, L&D ตอบเป็นภาษาไทย`,
+  copy:`คุณคือ Content Lead นักเขียน Copywriter เชี่ยวชาญ Blog, Video Script, White Paper ตอบเป็นภาษาไทย`,
+  shop:`คุณคือ E-commerce Lead เชี่ยวชาญ Store, Marketplace, Social Commerce ตอบเป็นภาษาไทย`,
+  frontend:`คุณคือ Senior Frontend Developer เชี่ยวชาญ React, Next.js, TypeScript, Tailwind CSS สร้าง UI production-ready ตอบเป็นภาษาไทย ใช้ code block`,
+  backend:`คุณคือ Senior Backend Developer เชี่ยวชาญ Node.js, Express, Python, REST API, Auth เขียน code scalable ตอบเป็นภาษาไทย ใช้ code block`,
+  db:`คุณคือ Database Architect เชี่ยวชาญ PostgreSQL, MySQL, MongoDB, Supabase, Redis ออกแบบ Schema, Query optimization ตอบเป็นภาษาไทย ใช้ SQL code block`,
+};
+
+async function streamFromAnthropicDirect(agent, task, desc) {
+  const outputEl = document.getElementById('claude-output');
+  if (!outputEl) return;
+  const apiKey = getApiKey();
+  if (!apiKey) return;
+
+  let fullText = '';
+  const systemPrompt = AGENT_PROMPTS[agent.id] || AGENT_PROMPTS.jeep;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20251001',
+        max_tokens: 4096,
+        stream: true,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: desc }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      outputEl.innerHTML = `<p style="color:#f87171">❌ API Error: ${err.error?.message || res.status}</p>`;
+      complete(task, agent);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (raw === '[DONE]') continue;
+        try {
+          const json = JSON.parse(raw);
+          if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
+            fullText += json.delta.text;
+            outputEl.innerHTML = renderMarkdown(fullText);
+            outputEl.scrollTop = outputEl.scrollHeight;
+          }
+          if (json.type === 'message_stop') {
+            complete(task, agent);
+            document.getElementById('output-done-badge').style.display = 'inline-block';
+            document.getElementById('output-copy-btn').style.display   = 'inline-block';
+            document.getElementById('output-copy-btn').onclick = () => {
+              navigator.clipboard.writeText(fullText);
+              document.getElementById('output-copy-btn').textContent = '✅ Copied!';
+            };
+          }
+        } catch {}
+      }
+    }
+  } catch (err) {
+    outputEl.innerHTML += `<p style="color:#f87171">❌ ${err.message}</p>`;
     complete(task, agent);
   }
 }
@@ -1207,6 +1376,10 @@ function init() {
   // Check server status
   checkServer();
   setInterval(checkServer, 30000);
+  // แสดง API modal ครั้งแรกถ้ายังไม่มี key
+  if (!getApiKey() && window.location.protocol !== 'file:') {
+    setTimeout(openApiModal, 1500);
+  }
 }
 init();
 </script>
