@@ -226,6 +226,10 @@ header{flex-shrink:0}
     padding-bottom:80px;
     min-height:auto;
   }
+  #filters{
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+  }
 
   #mob-nav{
     display:flex;
@@ -286,7 +290,7 @@ header{flex-shrink:0}
         <div style="font-size:.52rem;color:#333322">ทำงาน</div>
       </div>
       <div style="text-align:center">
-        <div class="pf" style="font-size:.55rem;color:#00b4ff">746</div>
+        <div class="pf" style="font-size:.55rem;color:#00b4ff">747</div>
         <div style="font-size:.52rem;color:#333322">Skills</div>
       </div>
       <div style="text-align:center">
@@ -362,7 +366,7 @@ header{flex-shrink:0}
   <!-- ── OFFICE FLOOR ── -->
   <div id="office">
     <!-- Dept filters -->
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="filters">
+    <div id="filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
       <div class="filt on" data-d="all" onclick="filter('all')">🏢 ทั้งหมด</div>
     </div>
     <!-- Floor label -->
@@ -655,6 +659,9 @@ const AGENTS = [
   {id:'db',       name:'ดีบี',     nameEn:'DB',      role:'Database Architect',    dept:'Database',         deptId:'database',   color:'#fb923c',
    commands:['/database-architect','/sql-pro','/database-migration','/database-optimizer','/postgres-schema-design','/supabase-postgres-best-practices','/postgresql-optimization','/neon-instagres','/database-index-tuner','/query-optimizer'],
    note:'PostgreSQL, MySQL, MongoDB, Supabase, Redis — Schema, Query, Migration, Optimization'},
+  {id:'prompt',   name:'พร็อม',    nameEn:'Prom',    role:'Prompt Master',         dept:'Prompt Engineering', deptId:'prompteng',  color:'#c084fc',
+   commands:['/prompt-master','/senior-prompt-engineer','/prompt-engineer-toolkit','/prompt-governance','/prompt-library','/llm-cost-optimizer','/llm-wiki','/ai-use-case-finder','/context-engine'],
+   note:'สร้าง prompt ที่ optimal สำหรับ AI tools 30+ แพลตฟอร์ม — ทุกคำต้องเปลี่ยน output'},
 ];
 
 const DEPT_LABELS = {
@@ -662,7 +669,8 @@ const DEPT_LABELS = {
   security:'🛡️ Sec',marketing:'📢 Mkt',seo:'🔍 SEO',sales:'💰 Sales',
   product:'📱 Product',cro:'📊 CRO',finance:'💹 Finance',legal:'⚖️ Legal',
   hr:'👥 HR',content:'✍️ Content',ecommerce:'🛒 E-com',
-  frontend:'🖥️ Frontend',backend:'⚙️ Backend',database:'🗄️ DB'
+  frontend:'🖥️ Frontend',backend:'⚙️ Backend',database:'🗄️ DB',
+  prompteng:'✨ Prompt'
 };
 
 const KEYWORDS = {
@@ -683,6 +691,7 @@ const KEYWORDS = {
   frontend:['react','next.js','nextjs','vue','svelte','html','css','tailwind','component','ui design','responsive','animation','frontend'],
   backend:['node','express','fastapi','django','laravel','rest api','graphql','auth','jwt','middleware','backend','server-side'],
   database:['sql','database','db','postgres','mysql','mongodb','supabase','redis','query','schema','migration','index','orm','prisma','drizzle'],
+  prompteng:['prompt','prompting','system prompt','few-shot','chain of thought','cot','midjourney','dalle','stable diffusion','cursor prompt','token','llm prompt','optimize prompt','เขียน prompt','prompt master'],
 };
 
 /* ══════════════ STATE ══════════════ */
