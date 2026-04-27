@@ -609,8 +609,8 @@ const AGENTS = [
    commands:['/ceo-advisor','/cfo-advisor','/cto-advisor','/cmo-advisor','/coo-advisor','/cpo-advisor','/cro-advisor','/chro-advisor','/ciso-advisor','/chief-of-staff','/executive-mentor','/founder-coach','/board-deck-builder','/strategic-alignment','/ma-playbook','/scenario-war-room','/intl-expansion','/succession-plan','/org-health-diagnostic','/change-management'],
    note:'ที่ปรึกษา C-Level ทุกด้าน ตั้งแต่ CEO จนถึง CISO'},
   {id:'kung',  name:'คุง',      nameEn:'Kung',      role:'Engineering Lead',      dept:'Engineering',      deptId:'engineering',color:'#60a5fa',
-   commands:['/senior-architect','/senior-backend','/senior-frontend','/senior-fullstack','/senior-devops','/senior-qa','/code-reviewer','/api-design-reviewer','/api-test-suite-builder','/ci-cd-pipeline-builder','/database-designer','/tdd-guide','/tech-debt-tracker','/changelog-generator','/release-manager','/migration-architect','/playwright-pro','/karpathy-coder'],
-   note:'Senior Engineers ทุกสาย: Backend, Frontend, DevOps, QA, Architecture'},
+   commands:['/senior-architect','/senior-backend','/senior-frontend','/senior-fullstack','/senior-devops','/senior-qa','/code-reviewer','/api-design-reviewer','/api-test-suite-builder','/ci-cd-pipeline-builder','/database-designer','/tdd-guide','/tech-debt-tracker','/changelog-generator','/release-manager','/migration-architect','/playwright-pro','/karpathy-coder','/git:pr','/git:cm','/git:cp','/git:clean','/focused-fix','/review','/init','/README'],
+   note:'Senior Engineers ทุกสาย: Backend, Frontend, DevOps, QA, Architecture + Git Workflow'},
   {id:'robot', name:'โรบ็อต',  nameEn:'Robot',     role:'AI & Agent Specialist', dept:'AI & Agents',     deptId:'ai',         color:'#a78bfa',
    commands:['/agent-designer','/agent-workflow-designer','/agenthub','/autoresearch-agent','/mcp-server-builder','/rag-architect','/llm-cost-optimizer','/prompt-engineer-toolkit','/prompt-governance','/self-improving-agent','/ai-security','/ai-use-case-finder','/automation-workflow'],
    note:'ออกแบบ สร้าง และจัดการ AI Agents — MCP, RAG, Prompts, Automation'},
@@ -618,13 +618,13 @@ const AGENTS = [
    commands:['/aws-solution-architect','/azure-cloud-architect','/gcp-cloud-architect','/docker-development','/helm-chart-builder','/terraform-patterns','/ci-cd-pipeline-builder','/observability-designer','/incident-commander','/runbook-generator'],
    note:'Cloud Architecture บน AWS, Azure, GCP รวมถึง IaC และ DevOps'},
   {id:'red',   name:'เรด',     nameEn:'Red',       role:'Security Lead',         dept:'Security',         deptId:'security',   color:'#f87171',
-   commands:['/security-pen-testing','/cloud-security','/threat-detection','/red-team','/adversarial-reviewer','/skill-security-auditor','/soc2-compliance','/secrets-vault-manager','/ai-security','/security-scan'],
-   note:'Security, Pen Testing, Compliance & Risk'},
+   commands:['/security-pen-testing','/cloud-security','/threat-detection','/red-team','/adversarial-reviewer','/skill-security-auditor','/soc2-compliance','/secrets-vault-manager','/ai-security','/security-scan','/security-review','/plugin-audit'],
+   note:'Security, Pen Testing, Compliance & Risk — Code Review & Plugin Audit'},
   {id:'mark',  name:'มาร์ค',   nameEn:'Mark',      role:'Marketing Lead',        dept:'Marketing',        deptId:'marketing',  color:'#fb923c',
    commands:['/marketing-strategy-pmm','/content-strategy','/content-creator','/content-production','/social-media-manager','/paid-ads','/facebook-ad-campaign','/google-ads-campaign','/tiktok-ad-script','/launch-strategy','/brand-voice-guide','/x-twitter-growth'],
    note:'Marketing Strategy ครบวงจร: Digital, Content, Social, Paid Ads'},
   {id:'search',name:'เซิร์ช',  nameEn:'Search',    role:'SEO Lead',              dept:'SEO',              deptId:'seo',        color:'#34d399',
-   commands:['/seo-audit','/ai-seo','/programmatic-seo','/keyword-research','/technical-seo-checklist','/local-seo-plan','/schema-markup','/youtube-seo','/seo-content-brief','/app-store-optimization','/link-building-plan'],
+   commands:['/seo-audit','/seo-auditor','/ai-seo','/programmatic-seo','/keyword-research','/technical-seo-checklist','/local-seo-plan','/schema-markup','/youtube-seo','/seo-content-brief','/app-store-optimization','/link-building-plan'],
    note:'SEO ครบทุกรูปแบบ: Technical, Content, Local, YouTube, ASO'},
   {id:'sale',  name:'เซลล์',   nameEn:'Sale',      role:'Sales Lead',            dept:'Sales & Revenue',  deptId:'sales',      color:'#fbbf24',
    commands:['/sales-engineer','/revenue-operations','/customer-success-manager','/sales-funnel-builder','/sales-script','/sales-deck','/cold-email','/objection-handler','/win-loss-analysis','/churn-prevention','/high-ticket-sales-page'],
@@ -651,17 +651,20 @@ const AGENTS = [
    commands:['/store-launch-plan','/product-description','/marketplace-launch-plan','/marketplace-seo','/cart-recovery-sms','/flash-sale-campaign','/loyalty-program','/social-media-calendar','/instagram-carousel','/tiktok-script'],
    note:'E-commerce & Marketplace: Store, Listing, Social Commerce'},
   {id:'frontend', name:'ฟรอนต์',  nameEn:'Front',   role:'Senior Frontend Dev',   dept:'Frontend',         deptId:'frontend',   color:'#22d3ee',
-   commands:['/senior-frontend','/artifacts-builder','/react-best-practices','/nextjs-patterns','/tailwind-component','/ui-component-builder','/performance-audit','/accessibility-check','/responsive-design','/animation-builder'],
+   commands:['/senior-frontend','/artifacts-builder','/react-best-practices','/nextjs-patterns','/tailwind-component','/ui-component-builder','/performance-audit','/accessibility-check','/responsive-design','/animation-builder','/frontend-design:frontend-design'],
    note:'React, Next.js, TypeScript, Tailwind CSS — สร้าง UI ที่สวยงามและ performant'},
   {id:'backend',  name:'แบ็คเอนด์',nameEn:'Back',   role:'Senior Backend Dev',    dept:'Backend',          deptId:'backend',    color:'#34d399',
-   commands:['/senior-backend','/api-design-reviewer','/rest-api-builder','/graphql-builder','/auth-system','/middleware-builder','/rate-limiter','/webhook-handler','/background-jobs','/microservice-design'],
-   note:'Node.js, Express, Python, Go — API, Auth, Microservices, Performance'},
+   commands:['/senior-backend','/api-design-reviewer','/rest-api-builder','/graphql-builder','/auth-system','/middleware-builder','/rate-limiter','/webhook-handler','/background-jobs','/microservice-design','/javascript-typescript:modern-javascript-patterns','/javascript-typescript:nodejs-backend-patterns','/javascript-typescript:typescript-advanced-types','/javascript-typescript:javascript-testing-patterns'],
+   note:'Node.js, Express, Python, Go — API, Auth, Microservices, Performance + JS/TS Patterns'},
   {id:'db',       name:'ดีบี',     nameEn:'DB',      role:'Database Architect',    dept:'Database',         deptId:'database',   color:'#fb923c',
    commands:['/database-architect','/sql-pro','/database-migration','/database-optimizer','/postgres-schema-design','/supabase-postgres-best-practices','/postgresql-optimization','/neon-instagres','/database-index-tuner','/query-optimizer'],
    note:'PostgreSQL, MySQL, MongoDB, Supabase, Redis — Schema, Query, Migration, Optimization'},
   {id:'prompt',   name:'พร็อม',    nameEn:'Prom',    role:'Prompt Master',         dept:'Prompt Engineering', deptId:'prompteng',  color:'#c084fc',
    commands:['/prompt-master','/senior-prompt-engineer','/prompt-engineer-toolkit','/prompt-governance','/prompt-library','/llm-cost-optimizer','/llm-wiki','/ai-use-case-finder','/context-engine'],
    note:'สร้าง prompt ที่ optimal สำหรับ AI tools 30+ แพลตฟอร์ม — ทุกคำต้องเปลี่ยน output'},
+  {id:'design',   name:'ดีไซน์',   nameEn:'Design',  role:'Design Lead',           dept:'Design & UX',      deptId:'design',     color:'#f472b6',
+   commands:['/design-mastery:brand-identity','/design-mastery:design-audit','/design-mastery:style-guide','/design-mastery:design-principles','/design-mastery:brand-systems','/design-mastery:premium-saas-design','/design-mastery:design-movements','/design-mastery:design-masters','/ui-ux-pro-max:ui-ux-pro-max'],
+   note:'Brand Identity, UI/UX Design System, Style Guide, Visual History — ความสวยงามที่มีหลักการ'},
 ];
 
 const DEPT_LABELS = {
@@ -670,7 +673,7 @@ const DEPT_LABELS = {
   product:'📱 Product',cro:'📊 CRO',finance:'💹 Finance',legal:'⚖️ Legal',
   hr:'👥 HR',content:'✍️ Content',ecommerce:'🛒 E-com',
   frontend:'🖥️ Frontend',backend:'⚙️ Backend',database:'🗄️ DB',
-  prompteng:'✨ Prompt'
+  prompteng:'✨ Prompt',design:'🎨 Design'
 };
 
 const KEYWORDS = {
@@ -692,6 +695,7 @@ const KEYWORDS = {
   backend:['node','express','fastapi','django','laravel','rest api','graphql','auth','jwt','middleware','backend','server-side'],
   database:['sql','database','db','postgres','mysql','mongodb','supabase','redis','query','schema','migration','index','orm','prisma','drizzle'],
   prompteng:['prompt','prompting','system prompt','few-shot','chain of thought','cot','midjourney','dalle','stable diffusion','cursor prompt','token','llm prompt','optimize prompt','เขียน prompt','prompt master'],
+  design:['design','brand','ui','ux','style guide','color palette','typography','logo','visual identity','brand identity','design system','design audit','ui design','ux design','wireframe','mockup','ดีไซน์','แบรนด์','สี','ฟอนต์','visual'],
 };
 
 /* ══════════════ STATE ══════════════ */
@@ -1085,6 +1089,7 @@ const AGENT_PROMPTS = {
   frontend:`คุณคือ Senior Frontend Developer เชี่ยวชาญ React, Next.js, TypeScript, Tailwind CSS สร้าง UI production-ready ตอบเป็นภาษาไทย ใช้ code block`,
   backend:`คุณคือ Senior Backend Developer เชี่ยวชาญ Node.js, Express, Python, REST API, Auth เขียน code scalable ตอบเป็นภาษาไทย ใช้ code block`,
   db:`คุณคือ Database Architect เชี่ยวชาญ PostgreSQL, MySQL, MongoDB, Supabase, Redis ออกแบบ Schema, Query optimization ตอบเป็นภาษาไทย ใช้ SQL code block`,
+  design:`คุณคือ Design Lead เชี่ยวชาญ Brand Identity, UI/UX Design System, Visual Hierarchy, Typography, Color Theory, Design Movements ตอบเป็นภาษาไทย อธิบายหลักการออกแบบพร้อมตัวอย่างที่เป็นรูปธรรม`,
 };
 
 async function streamFromAnthropicDirect(agent, task, desc) {
